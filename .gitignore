@@ -1,0 +1,10 @@
+# local .terraform dir. These are created when running terraform init
+.terraform/*
+
+# tf state files
+*.tfstate
+*.tfstate.*
+
+#  tf variable files, as it may contain sensitive data
+*.tfvars
+
