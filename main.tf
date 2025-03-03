@@ -10,6 +10,7 @@ variable availability_zone {}
 variable env_prefix {} // can be either dev, prod or staging etc. 
 variable my_ip {}
 variable instance_type {}
+variable public_key_location {}
 
 
 resource "aws_vpc" "myapp-vpc" { // aws_vpc is 'provider_resource' and development-vpc is the 
@@ -94,6 +95,11 @@ data "aws_ami" "latest-amazon-linux-image" {
     }
 }
 
+resource "aws_key_pair" "ssh-key" {
+    key_name = "automated-server-key-pair-terraform"
+    public_key = file(var.public_key_location) // use the existing id_rsa.pub on your laptop
+}
+
 
 resource "aws_instance" "myapp-server" {
     ami = data.aws_ami.latest-amazon-linux-image.id
@@ -104,7 +110,7 @@ resource "aws_instance" "myapp-server" {
     availability_zone = var.availability_zone
 
     associate_public_ip_address = true
-    key_name = "server-key-pair-terraform"
+    key_name = aws_key_pair.ssh-key.key_name
 
     tags = {
         Name: "${var.env_prefix}-server"
@@ -114,4 +120,8 @@ resource "aws_instance" "myapp-server" {
 
 output "aws_ami_id" {
     value = data.aws_ami.latest-amazon-linux-image.id
+}
+
+output "ec2_public_ip" {
+    value = data.aws_instance.myapp-server.public_ip
 }
