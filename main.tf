@@ -11,6 +11,8 @@ variable env_prefix {} // can be either dev, prod or staging etc.
 variable my_ip {}
 variable instance_type {}
 variable public_key_location {}
+variable image_name {}
+variable ssh_key_private {}
 
 
 resource "aws_vpc" "myapp-vpc" { // aws_vpc is 'provider_resource' and development-vpc is the 
@@ -58,7 +60,7 @@ resource "aws_default_security_group" "default-sg" {
         from_port = 22
         to_port = 22
         protocol = "TCP"
-        cidr_blocks = [var.my_ip]
+        cidr_blocks = ["0.0.0.0/0"] #[var.my_ip]
     }
 
     ingress { // for NGINX server
@@ -87,7 +89,7 @@ data "aws_ami" "latest-amazon-linux-image" {
     owners = ["amazon"]
     filter {
         name = "name" // name of parameter to filter with
-        values = ["amzn2-ami-kernel-*-x86_64-gp2"]
+        values = [var.image_name]
     }
     filter {
         name = "virtualization-type"
@@ -102,7 +104,7 @@ resource "aws_key_pair" "ssh-key" {
 
 
 resource "aws_instance" "myapp-server" {
-    ami = data.aws_ami.latest-amazon-linux-image.id
+    ami = "ami-05238ab1443fdf48f" #data.aws_ami.latest-amazon-linux-image.id
     instance_type = var.instance_type
 
     subnet_id = aws_subnet.myapp-subnet-1.id
@@ -112,16 +114,22 @@ resource "aws_instance" "myapp-server" {
     associate_public_ip_address = true
     key_name = aws_key_pair.ssh-key.key_name
 
-    user_data = file("entry-script.sh")
-    
-    user_data_replace_on_change = true // this will ensure the user-data is re-executed when user-data itself is modified
-
     tags = {
         Name: "${var.env_prefix}-server"
     }
 }
 
+resource "null_resource" "configure_server" {
 
+    triggers = {
+        trigger = aws_instance.myapp-server.public_ip
+    }
+    provisioner "local-exec" {
+      working_dir = "/Users/ausman/ansible"
+      # run ansible playbook, and overwrite host file with the IP of this new server
+      command = "ansible-playbook --inventory ${aws_instance.myapp-server.public_ip}, --private-key ${var.ssh_key_private} --user ec2-user deploy-docker-new-user.yaml"
+    }
+}
 
 output "aws_ami_id" {
     value = data.aws_ami.latest-amazon-linux-image.id
