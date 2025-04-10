@@ -11,6 +11,7 @@ variable env_prefix {} // can be either dev, prod or staging etc.
 variable my_ip {}
 variable instance_type {}
 variable public_key_location {}
+variable image_name {}
 
 
 resource "aws_vpc" "myapp-vpc" { // aws_vpc is 'provider_resource' and development-vpc is the 
@@ -87,7 +88,7 @@ data "aws_ami" "latest-amazon-linux-image" {
     owners = ["amazon"]
     filter {
         name = "name" // name of parameter to filter with
-        values = ["amzn2-ami-kernel-*-x86_64-gp2"]
+        values = [var.image_name] 
     }
     filter {
         name = "virtualization-type"
@@ -98,27 +99,6 @@ data "aws_ami" "latest-amazon-linux-image" {
 resource "aws_key_pair" "ssh-key" {
     key_name = "automated-server-key-pair-terraform"
     public_key = file(var.public_key_location) // use the existing id_rsa.pub on your laptop
-}
-
-
-resource "aws_instance" "myapp-server" {
-    ami = "ami-05238ab1443fdf48f" #data.aws_ami.latest-amazon-linux-image.id
-    instance_type = var.instance_type
-
-    subnet_id = aws_subnet.myapp-subnet-1.id
-    vpc_security_group_ids = [aws_default_security_group.default-sg.id]
-    availability_zone = var.availability_zone
-
-    associate_public_ip_address = true
-    key_name = aws_key_pair.ssh-key.key_name
-
-    user_data = file("entry-script.sh")
-    
-    user_data_replace_on_change = true // this will ensure the user-data is re-executed when user-data itself is modified
-
-    tags = {
-        Name: "${var.env_prefix}-server1"
-    }
 }
 
 resource "aws_instance" "myapp-server1" {
@@ -163,7 +143,7 @@ resource "aws_instance" "myapp-server2" {
 
 resource "aws_instance" "myapp-server3" {
     ami = data.aws_ami.latest-amazon-linux-image.id
-    instance_type = var.instance_type
+    instance_type = "t2.small" #var.instance_type
 
     subnet_id = aws_subnet.myapp-subnet-1.id
     vpc_security_group_ids = [aws_default_security_group.default-sg.id]
@@ -185,6 +165,14 @@ output "aws_ami_id" {
     value = data.aws_ami.latest-amazon-linux-image.id
 }
 
-output "ec2_public_ip" {
-    value = aws_instance.myapp-server.public_ip
+output "ec2_public_ip_server1" {
+    value = aws_instance.myapp-server1.public_ip
+}
+
+output "ec2_public_ip_server2" {
+    value = aws_instance.myapp-server2.public_ip
+}
+
+output "ec2_public_ip_server3" {
+    value = aws_instance.myapp-server3.public_ip
 }
