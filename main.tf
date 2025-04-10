@@ -17,6 +17,7 @@ variable image_name {}
 resource "aws_vpc" "myapp-vpc" { // aws_vpc is 'provider_resource' and development-vpc is the 
     // resource like a variable name
     cidr_block = var.vpc_cidr_block
+    enable_dns_hostnames = true # assign public dns [for dynamic inventory in Ansible]
     tags = {
         Name: "${var.env_prefix}-vpc" // as the variable is being used inside a string, 
         // it has a different script with brackets and $
