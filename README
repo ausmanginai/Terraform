@@ -1,0 +1,4 @@
+This branch is created for Ansible chapter, video 18, where we learn to run an ansible script from within a terraform script. 
+This completely automates the process, don't need to manually get the public IP of the new server and update hosts file etc.
+
+The ansible playbook is saved in the Ansible repo
