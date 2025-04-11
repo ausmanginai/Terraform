@@ -123,7 +123,7 @@ resource "aws_instance" "myapp-server1" {
 }
 
 resource "aws_instance" "myapp-server2" {
-    ami = data.aws_ami.latest-amazon-linux-image.id
+    ami = "ami-05238ab1443fdf48f" #data.aws_ami.latest-amazon-linux-image.id
     instance_type = var.instance_type
 
     subnet_id = aws_subnet.myapp-subnet-1.id
@@ -138,12 +138,12 @@ resource "aws_instance" "myapp-server2" {
     user_data_replace_on_change = true // this will ensure the user-data is re-executed when user-data itself is modified
 
     tags = {
-        Name: "${var.env_prefix}-server2"
+        Name: "${var.env_prefix}-server"
     }
 }
 
 resource "aws_instance" "myapp-server3" {
-    ami = data.aws_ami.latest-amazon-linux-image.id
+    ami = "ami-05238ab1443fdf48f" #data.aws_ami.latest-amazon-linux-image.id
     instance_type = "t2.small" #var.instance_type
 
     subnet_id = aws_subnet.myapp-subnet-1.id
@@ -158,7 +158,27 @@ resource "aws_instance" "myapp-server3" {
     user_data_replace_on_change = true // this will ensure the user-data is re-executed when user-data itself is modified
 
     tags = {
-        Name: "${var.env_prefix}-server3"
+        Name: "prod-server"
+    }
+}
+
+resource "aws_instance" "myapp-server4" {
+    ami = "ami-05238ab1443fdf48f" #data.aws_ami.latest-amazon-linux-image.id
+    instance_type = "t2.small" #var.instance_type
+
+    subnet_id = aws_subnet.myapp-subnet-1.id
+    vpc_security_group_ids = [aws_default_security_group.default-sg.id]
+    availability_zone = var.availability_zone
+
+    associate_public_ip_address = true
+    key_name = aws_key_pair.ssh-key.key_name
+
+    user_data = file("entry-script.sh")
+    
+    user_data_replace_on_change = true // this will ensure the user-data is re-executed when user-data itself is modified
+
+    tags = {
+        Name: "prod-server"
     }
 }
 
